@@ -1,0 +1,237 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@700;800&display=swap');
+@import "tailwindcss";
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   TAILWIND v4  —  THEME TOKENS
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+@theme {
+  /* ── Brand palette ──────────────────────────────── */
+  --color-brand-50:  #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-400: #60a5fa;
+  --color-brand-500: #3b82f6;
+  --color-brand-600: #2563eb;
+  --color-brand-700: #1d4ed8;
+
+  /* ── Shadows ────────────────────────────────────── */
+  --shadow-glass-dark:  0 4px 24px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.06);
+  --shadow-glass-light: 0 4px 24px rgba(100,120,180,0.12), inset 0 1px 0 rgba(255,255,255,0.90);
+  --shadow-glow-blue:   0 0 16px rgba(37,99,235,0.35);
+  --shadow-glow-sm:     0 0 10px rgba(37,99,235,0.20);
+
+  /* ── Font families ──────────────────────────────── */
+  --font-sans:    'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+
+  /* ── Animations ─────────────────────────────────── */
+  --animate-blob-float: blob-float 16s ease-in-out infinite alternate;
+  --animate-card-in:    card-in 0.4s ease both;
+
+  @keyframes blob-float {
+    0%   { transform: translate(0,0) scale(1); }
+    100% { transform: translate(30px,20px) scale(1.08); }
+  }
+  @keyframes card-in {
+    0%   { opacity: 0; transform: translateY(14px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   CUSTOM VARIANT  —  light: (dark is default)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+@custom-variant light (.light &);
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   BASE LAYER
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    background-color: #0e0e12;
+    color: #e8eaf2;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  html.light {
+    background-color: #f0f2f8;
+    color: #0f1523;
+  }
+
+  /* smooth theme transition */
+  html.theme-switching * {
+    transition: background-color 0.35s ease,
+                border-color 0.30s ease,
+                color 0.25s ease,
+                box-shadow 0.35s ease !important;
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.10);
+    border-radius: 9999px;
+  }
+  .light ::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.12);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(37,99,235,0.40);
+  }
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   COMPONENT LAYER
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+@layer components {
+
+  /* ── GLASS SURFACE ────────────────────────────────── */
+  .glass {
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(20px) saturate(160%) brightness(1.1);
+    -webkit-backdrop-filter: blur(20px) saturate(160%) brightness(1.1);
+    border: 1px solid rgba(255,255,255,0.07);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+  .light .glass {
+    background: rgba(255,255,255,0.55);
+    border-color: rgba(200,210,235,0.55);
+    box-shadow: 0 4px 24px rgba(100,120,180,0.12), inset 0 1px 0 rgba(255,255,255,0.90);
+  }
+
+  /* ── GLASS BUTTON ─────────────────────────────────── */
+  .glass-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 9999px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: #8b90a7;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+  }
+  .glass-btn:hover {
+    border-color: rgba(37,99,235,0.40);
+    color: #60a5fa;
+    box-shadow: 0 0 10px rgba(37,99,235,0.20);
+  }
+  .light .glass-btn {
+    background: rgba(0,0,0,0.04);
+    border-color: rgba(0,0,0,0.08);
+    color: #3d4a6b;
+  }
+  .light .glass-btn:hover {
+    border-color: rgba(37,99,235,0.40);
+    color: #2563eb;
+  }
+
+  /* ── CHIP ──────────────────────────────────────────── */
+  .chip {
+    padding: 7px 16px;
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #8b90a7;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: all 0.2s ease;
+  }
+  .chip:hover {
+    background: rgba(255,255,255,0.09);
+    border-color: rgba(255,255,255,0.14);
+    color: #c5c9de;
+  }
+  .chip.active {
+    background: rgba(37,99,235,0.15);
+    border-color: rgba(59,130,246,0.40);
+    color: #c5d9ff;
+    box-shadow: 0 0 12px rgba(37,99,235,0.20);
+  }
+  .light .chip {
+    background: rgba(255,255,255,0.60);
+    border-color: rgba(200,210,235,0.55);
+    color: #3d4a6b;
+  }
+  .light .chip:hover {
+    background: rgba(255,255,255,0.80);
+    border-color: rgba(200,210,235,0.80);
+    color: #0f1523;
+  }
+  .light .chip.active {
+    background: rgba(37,99,235,0.10);
+    border-color: rgba(59,130,246,0.35);
+    color: #1d4ed8;
+  }
+
+  /* ── SIDEBAR ICON BADGE ───────────────────────────── */
+  .sidebar-badge {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.07);
+    transition: all 0.2s ease;
+  }
+  .sidebar-badge.active {
+    background: rgba(37,99,235,0.15);
+    border-color: rgba(59,130,246,0.35);
+  }
+  .light .sidebar-badge {
+    background: rgba(0,0,0,0.04);
+    border-color: rgba(0,0,0,0.08);
+  }
+  .light .sidebar-badge.active {
+    background: rgba(37,99,235,0.10);
+    border-color: rgba(59,130,246,0.30);
+  }
+
+  /* ── LOGO GRADIENT TEXT ───────────────────────────── */
+  .logo-gradient {
+    background: linear-gradient(135deg, #ffffff 30%, #60a5fa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .light .logo-gradient {
+    background: linear-gradient(135deg, #0f1523 30%, #2563eb 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   UTILITY HELPERS
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+@layer utilities {
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
