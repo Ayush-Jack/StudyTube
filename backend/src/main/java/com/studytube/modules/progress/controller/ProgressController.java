@@ -69,4 +69,23 @@ public class ProgressController {
         UserStatsResponse stats = progressService.getUserStats(user.getId());
         return ResponseEntity.ok(ApiResponse.ok(stats));
     }
+
+    // ── DELETE /api/v1/progress/history/{id} — remove single entry ──
+    @DeleteMapping("/history/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteHistoryEntry(
+            @AuthenticationPrincipal User user,
+            @PathVariable String id
+    ) {
+        progressService.deleteHistoryEntry(user.getId(), id);
+        return ResponseEntity.ok(ApiResponse.ok("History entry removed", null));
+    }
+
+    // ── DELETE /api/v1/progress/history — clear all history ─────────
+    @DeleteMapping("/history")
+    public ResponseEntity<ApiResponse<Void>> clearAllHistory(
+            @AuthenticationPrincipal User user
+    ) {
+        progressService.clearAllHistory(user.getId());
+        return ResponseEntity.ok(ApiResponse.ok("All history cleared", null));
+    }
 }

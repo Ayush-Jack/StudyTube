@@ -41,3 +41,11 @@ export async function getStats(): Promise<UserStats> {
   const res = await api.get<ApiResponse<UserStats>>("/progress/stats");
   return res.data.data;
 }
+
+export async function deleteHistoryEntry(id: string): Promise<void> {
+  await api.delete(`/progress/history/${id}`);
+}
+
+export async function clearAllHistory(): Promise<void> {
+  await api.delete("/progress/history");
+}

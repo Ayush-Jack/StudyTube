@@ -62,6 +62,7 @@ public class ProgressService {
                     .youtubeVideoId(video.getYoutubeVideoId())
                     .videoTitle(video.getTitle())
                     .channelName(video.getChannelName())
+                    .thumbnailUrl(video.getThumbnailUrl())
                     .domain(video.getDomain())
                     .watchDurationSeconds(duration)
                     .completionPercent(percent)
@@ -86,6 +87,24 @@ public class ProgressService {
     public Optional<WatchHistoryResponse> getVideoProgress(String userId, String videoId) {
         return watchHistoryRepository.findByUserIdAndVideoId(userId, videoId)
                 .map(this::toResponse);
+    }
+
+    // ── Delete a single history entry ───────────────────────────
+    public void deleteHistoryEntry(String userId, String historyId) {
+        WatchHistory entry = watchHistoryRepository.findById(historyId)
+                .orElseThrow(() -> AppException.notFound("History entry not found"));
+        if (!entry.getUserId().equals(userId)) {
+            throw AppException.forbidden("Not your history entry");
+        }
+        watchHistoryRepository.deleteById(historyId);
+        log.debug("Deleted history entry: {} for user {}", historyId, userId);
+    }
+
+    // ── Clear all history for a user ────────────────────────────
+    public void clearAllHistory(String userId) {
+        List<WatchHistory> all = watchHistoryRepository.findByUserId(userId);
+        watchHistoryRepository.deleteAll(all);
+        log.info("Cleared {} history entries for user {}", all.size(), userId);
     }
 
     // ── Get user learning stats ─────────────────────────────────
@@ -148,6 +167,7 @@ public class ProgressService {
                 .youtubeVideoId(h.getYoutubeVideoId())
                 .videoTitle(h.getVideoTitle())
                 .channelName(h.getChannelName())
+                .thumbnailUrl(h.getThumbnailUrl())
                 .domain(h.getDomain())
                 .watchedAt(h.getWatchedAt())
                 .watchDurationSeconds(h.getWatchDurationSeconds())

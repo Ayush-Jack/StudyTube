@@ -27,6 +27,7 @@ public class WatchHistory {
     private String youtubeVideoId;
     private String videoTitle;
     private String channelName;
+    private String thumbnailUrl;
     private String domain;
 
     private LocalDateTime watchedAt;

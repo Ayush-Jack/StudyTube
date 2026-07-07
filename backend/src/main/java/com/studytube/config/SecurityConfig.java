@@ -1,6 +1,7 @@
 package com.studytube.config;
 
 import com.studytube.common.util.AppConstants;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -58,6 +59,17 @@ public class SecurityConfig {
             // Stateless session — no server-side sessions
             .sessionManagement(sm ->
                 sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+            // Return 401 JSON instead of Spring's default 403 page
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json");
+                    response.getWriter().write(
+                        "{\"success\":false,\"message\":\"Unauthorized — please log in\",\"status\":401}"
+                    );
+                })
+            )
 
             // Authorization rules
             .authorizeHttpRequests(auth -> auth

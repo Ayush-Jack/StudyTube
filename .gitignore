@@ -21,6 +21,51 @@ desktop.ini
 *.swp
 *.swo
 *~
+*.iml
+*.iws
+*.ipr
 
 ### Logs ###
 *.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ─── Frontend (Next.js) ───
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/.vercel/
+frontend/*.tsbuildinfo
+frontend/next-env.d.ts
+frontend/.pnp
+frontend/.pnp.*
+frontend/.yarn/*
+!frontend/.yarn/patches
+!frontend/.yarn/plugins
+!frontend/.yarn/releases
+!frontend/.yarn/versions
+frontend/coverage/
+frontend/*.pem
+
+# ─── Backend (Spring Boot / Maven) ───
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+backend/HELP.md
+backend/.apt_generated
+backend/.classpath
+backend/.factorypath
+backend/.project
+backend/.settings/
+backend/.springBeans
+backend/.sts4-cache
+backend/out/
+backend/build/
+backend/nbproject/
+backend/nbbuild/
+backend/dist/
+backend/nbdist/
+backend/.nb-gradle/

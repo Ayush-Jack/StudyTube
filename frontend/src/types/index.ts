@@ -65,6 +65,7 @@ export interface WatchHistory {
   youtubeVideoId: string;
   videoTitle: string;
   channelName: string;
+  thumbnailUrl: string | null;
   domain: string;
   watchedAt: string;
   watchDurationSeconds: number;

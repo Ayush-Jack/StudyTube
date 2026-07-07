@@ -19,7 +19,6 @@ const PRIMARY_NAV = [
 ];
 
 const YOU_NAV = [
-  { icon: PlaySquare,   label: "Your channel", href: "/channel/me" },
   { icon: History,      label: "History",      href: "/history" },
   { icon: ListVideo,    label: "Playlists",    href: "/playlists" },
   { icon: Clock,        label: "Watch later",  href: "/watch-later" },

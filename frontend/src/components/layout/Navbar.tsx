@@ -188,7 +188,7 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
         {isAuthenticated && user ? (
           <>
             {/* Create pill button */}
-            <button
+            {/* <button
               id="navbar-create-btn"
               className="
                 hidden sm:flex items-center gap-1.5 rounded-full h-9 px-3.5
@@ -203,17 +203,17 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
             >
               <Plus size={18} />
               <span className="text-[13px] font-medium text-[#e8eaf2] light:text-[#0f1523]">Create</span>
-            </button>
+            </button> */}
 
             {/* Bell icon */}
-            <button
+            {/* <button
               id="navbar-bell-btn"
               className="glass-btn relative"
               aria-label="Notifications"
             >
-              <Bell size={18} strokeWidth={1.6} />
-              {/* Badge */}
-              <span className="
+              <Bell size={18} strokeWidth={1.6} /> */}
+            {/* Badge */}
+            {/* <span className="
                 absolute top-[2px] right-0
                 w-4 h-4 rounded-full
                 flex items-center justify-center
@@ -223,7 +223,7 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
               ">
                 6
               </span>
-            </button>
+            </button> */}
 
             {/* Avatar + Dropdown */}
             <div className="relative" ref={dropdownRef}>
@@ -349,7 +349,7 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
                 light:hover:bg-brand-600/12 light:hover:text-brand-700
               "
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
               Sign In
             </button>
           </Link>
