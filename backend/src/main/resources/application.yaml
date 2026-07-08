@@ -31,5 +31,8 @@ app:
     api-key: ${YOUTUBE_API_KEY}
     base-url: https://www.googleapis.com/youtube/v3
 
+  sync:
+    max-videos-per-channel: -1
+
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://localhost:3000}

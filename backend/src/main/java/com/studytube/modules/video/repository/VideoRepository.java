@@ -38,4 +38,14 @@ public interface VideoRepository extends MongoRepository<Video, String> {
 
     // Count videos for a channel (used in sync)
     long countByChannelId(String channelId);
+
+    /**
+     * Projection query — returns ONLY youtubeVideoId strings for a channel.
+     * Used by SyncService to determine which videos already exist in the DB
+     * without loading full Video documents into memory.
+     *
+     * <p>Quota impact: ONE MongoDB query instead of N existsBy... calls.</p>
+     */
+    @Query(value = "{ 'youtubeChannelId': ?0 }", fields = "{ 'youtubeVideoId': 1, '_id': 0 }")
+    List<Video> findYoutubeVideoIdsByYoutubeChannelId(String youtubeChannelId);
 }

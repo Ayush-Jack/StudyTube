@@ -132,3 +132,34 @@ export interface SyncResultResponse {
   errorMessage: string | null;
   syncedAt: string;
 }
+
+// ── Async Sync Jobs ──────────────────────────────────────────────
+
+export type SyncJobStatus = "QUEUED" | "RUNNING" | "COMPLETED" | "FAILED";
+
+export interface ChannelSyncResult {
+  channelId: string;
+  channelName: string;
+  status: string;
+  videosFound: number;
+  videosAdded: number;
+  videosSkipped: number;
+  errorMessage: string | null;
+  durationMs: number;
+}
+
+export interface SyncJobResponse {
+  jobId: string;
+  status: SyncJobStatus;
+  progress: number;
+  currentChannel: string | null;
+  processedChannels: number;
+  totalChannels: number;
+  totalVideosFound: number;
+  totalVideosAdded: number;
+  startedAt: string | null;
+  completedAt: string | null;
+  durationMs: number | null;
+  errorMessage: string | null;
+  channelResults: ChannelSyncResult[];
+}

@@ -1,25 +1,39 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
-import { RefreshCw, AlertTriangle, CheckCircle, Clock, XCircle, Play, Settings } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import {
+  RefreshCw, AlertTriangle, CheckCircle, Clock, XCircle,
+  Play, Settings, Loader2, Zap,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import * as syncService from "@/services/syncService";
-import type { SyncLog, SyncResultResponse } from "@/types";
+import type { SyncLog, SyncJobResponse } from "@/types";
 import { formatTimeAgo } from "@/lib/utils";
 
 const STATUS_CONFIG: Record<string, { icon: typeof CheckCircle; color: string; lightColor: string; label: string }> = {
-  SUCCESS: { icon: CheckCircle,    color: "text-emerald-400", lightColor: "light:text-emerald-600", label: "Success" },
-  FAILED:  { icon: XCircle,        color: "text-red-400",     lightColor: "light:text-red-500",     label: "Failed" },
-  PARTIAL: { icon: AlertTriangle,  color: "text-amber-400",   lightColor: "light:text-amber-600",   label: "Partial" },
+  SUCCESS: { icon: CheckCircle,   color: "text-emerald-400", lightColor: "light:text-emerald-600", label: "Success" },
+  FAILED:  { icon: XCircle,       color: "text-red-400",     lightColor: "light:text-red-500",     label: "Failed" },
+  PARTIAL: { icon: AlertTriangle, color: "text-amber-400",   lightColor: "light:text-amber-600",   label: "Partial" },
 };
+
+function formatDuration(ms: number) {
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  return `${m}m ${rem}s`;
+}
 
 export default function AdminSyncPage() {
   const [logs, setLogs] = useState<SyncLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncResults, setSyncResults] = useState<SyncResultResponse[] | null>(null);
   const [autoSync, setAutoSync] = useState(true);
   const [syncFreq, setSyncFreq] = useState("6");
+
+  // Async job state
+  const [activeJob, setActiveJob] = useState<SyncJobResponse | null>(null);
+  const [isStarting, setIsStarting] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── Fetch sync logs ─────────────────────────────────────────────
   const fetchLogs = useCallback(async () => {
@@ -38,18 +52,45 @@ export default function AdminSyncPage() {
 
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
 
-  // ── Trigger full sync ───────────────────────────────────────────
-  const handleFullSync = async () => {
-    setIsSyncing(true);
-    setSyncResults(null);
+  // ── Cleanup polling on unmount ──────────────────────────────────
+  useEffect(() => {
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, []);
+
+  // ── Start polling for job status ────────────────────────────────
+  const startPolling = useCallback((jobId: string) => {
+    if (pollRef.current) clearInterval(pollRef.current);
+
+    const poll = async () => {
+      try {
+        const status = await syncService.getSyncJobStatus(jobId);
+        setActiveJob(status);
+
+        if (status.status === "COMPLETED" || status.status === "FAILED") {
+          if (pollRef.current) clearInterval(pollRef.current);
+          pollRef.current = null;
+          await fetchLogs(); // Refresh history
+        }
+      } catch {
+        // silently retry on next interval
+      }
+    };
+
+    poll(); // immediate first call
+    pollRef.current = setInterval(poll, 2000);
+  }, [fetchLogs]);
+
+  // ── Start async sync ────────────────────────────────────────────
+  const handleStartSync = async () => {
+    setIsStarting(true);
+    setActiveJob(null);
     try {
-      const results = await syncService.triggerFullSync();
-      setSyncResults(results);
-      await fetchLogs();
+      const jobId = await syncService.startSync();
+      startPolling(jobId);
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Sync failed");
+      alert(err instanceof Error ? err.message : "Failed to start sync");
     } finally {
-      setIsSyncing(false);
+      setIsStarting(false);
     }
   };
 
@@ -65,8 +106,18 @@ export default function AdminSyncPage() {
   const avgDuration = logs.length > 0
     ? Math.round(logs.reduce((sum, l) => sum + l.durationMs, 0) / logs.length / 1000)
     : 0;
-
   const failedLogs = logs.filter((l) => l.status === "FAILED" && l.errorMessage);
+
+  const isRunning = activeJob?.status === "RUNNING" || activeJob?.status === "QUEUED";
+  const isCompleted = activeJob?.status === "COMPLETED";
+  const isFailed = activeJob?.status === "FAILED";
+
+  // ETA calculation
+  const elapsed = activeJob?.durationMs ?? 0;
+  const progress = activeJob?.progress ?? 0;
+  const eta = progress > 0 && progress < 100
+    ? Math.round((elapsed / progress) * (100 - progress))
+    : 0;
 
   // ── Loading ─────────────────────────────────────────────────────
   if (isLoading) {
@@ -97,11 +148,13 @@ export default function AdminSyncPage() {
           <p className="text-sm text-[#8b90a7] light:text-[#3d4a6b] mt-0.5">Monitor and control video syncing from YouTube</p>
         </div>
         <button
-          onClick={handleFullSync}
-          disabled={isSyncing}
+          onClick={handleStartSync}
+          disabled={isStarting || isRunning}
           className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all disabled:opacity-50 bg-emerald-500 light:bg-emerald-600 text-white hover:bg-emerald-600 light:hover:bg-emerald-700">
-          <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
-          {isSyncing ? "Syncing..." : "Trigger Full Sync"}
+          {isStarting || isRunning
+            ? <Loader2 size={14} className="animate-spin" />
+            : <Zap size={14} />}
+          {isStarting ? "Starting..." : isRunning ? "Syncing..." : "Start Full Sync"}
         </button>
       </div>
 
@@ -126,30 +179,115 @@ export default function AdminSyncPage() {
         ))}
       </div>
 
-      {/* Active Sync Banner */}
-      {isSyncing && (
-        <div className="rounded-xl p-4 mb-6 flex items-center gap-4 bg-emerald-950/40 light:bg-emerald-50 border border-emerald-800/40 light:border-emerald-200">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-[#e8eaf2] light:text-[#0f1523]">Full sync in progress...</p>
-            <p className="text-xs text-[#8b90a7] light:text-[#3d4a6b] mt-0.5">Syncing all approved channels. This may take 10-20 seconds.</p>
+      {/* ── Live Sync Progress Panel ─────────────────────────────── */}
+      {isRunning && activeJob && (
+        <div className="rounded-2xl p-5 mb-6 border border-emerald-800/40 light:border-emerald-200 bg-emerald-950/30 light:bg-emerald-50">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
+            <h2 className="text-sm font-bold text-[#e8eaf2] light:text-[#0f1523]">
+              Sync In Progress
+            </h2>
+            <span className="ml-auto text-xs font-mono text-emerald-400 light:text-emerald-600">
+              {activeJob.status}
+            </span>
+          </div>
+
+          {/* Progress bar */}
+          <div className="w-full h-3 rounded-full bg-white/[0.08] light:bg-black/[0.06] mb-3 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-500 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+            <div>
+              <p className="text-[#4a4f66] light:text-[#7a86a8] text-xs">Progress</p>
+              <p className="font-bold text-[#e8eaf2] light:text-[#0f1523] font-display text-lg">{progress}%</p>
+            </div>
+            <div>
+              <p className="text-[#4a4f66] light:text-[#7a86a8] text-xs">Current Channel</p>
+              <p className="font-semibold text-[#e8eaf2] light:text-[#0f1523] truncate">{activeJob.currentChannel ?? "Preparing..."}</p>
+            </div>
+            <div>
+              <p className="text-[#4a4f66] light:text-[#7a86a8] text-xs">Channels</p>
+              <p className="font-semibold text-[#e8eaf2] light:text-[#0f1523]">
+                {activeJob.processedChannels} / {activeJob.totalChannels}
+              </p>
+            </div>
+            <div>
+              <p className="text-[#4a4f66] light:text-[#7a86a8] text-xs">Videos Found</p>
+              <p className="font-semibold text-emerald-400 light:text-emerald-600">
+                {activeJob.totalVideosFound}
+                {activeJob.totalVideosAdded > 0 && (
+                  <span className="text-xs ml-1">(+{activeJob.totalVideosAdded} new)</span>
+                )}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-6 mt-3 text-xs text-[#4a4f66] light:text-[#7a86a8]">
+            <span>⏱ Elapsed: {formatDuration(elapsed)}</span>
+            {eta > 0 && <span>⏳ ETA: ~{formatDuration(eta)}</span>}
           </div>
         </div>
       )}
 
-      {/* Sync Results Summary */}
-      {syncResults && !isSyncing && (
-        <div className="rounded-xl p-4 mb-6 bg-emerald-950/30 light:bg-emerald-50 border border-emerald-800/30 light:border-emerald-200">
-          <p className="text-sm font-semibold text-[#e8eaf2] light:text-[#0f1523] mb-2">
-            ✅ Sync Complete — {syncResults.length} channel{syncResults.length !== 1 ? "s" : ""} processed
-          </p>
-          <div className="flex gap-4 text-xs">
-            <span className="text-emerald-400 light:text-emerald-600">{syncResults.filter((r) => r.status === "SUCCESS").length} Succeeded</span>
-            <span className="text-red-400 light:text-red-500">{syncResults.filter((r) => r.status === "FAILED").length} Failed</span>
-            <span className="text-[#8b90a7] light:text-[#3d4a6b]">+{syncResults.reduce((s, r) => s + r.videosAdded, 0)} videos added</span>
+      {/* ── Completed / Failed Banner ────────────────────────────── */}
+      {isCompleted && activeJob && (
+        <div className="rounded-2xl p-5 mb-6 border border-emerald-800/30 light:border-emerald-200 bg-emerald-950/20 light:bg-emerald-50">
+          <div className="flex items-center gap-2 mb-3">
+            <CheckCircle size={18} className="text-emerald-400 light:text-emerald-600" />
+            <h2 className="text-sm font-bold text-[#e8eaf2] light:text-[#0f1523]">
+              Sync Completed
+            </h2>
+            <span className="ml-auto text-xs text-[#4a4f66] light:text-[#7a86a8]">
+              {activeJob.durationMs ? formatDuration(activeJob.durationMs) : ""}
+            </span>
           </div>
-          <button onClick={() => setSyncResults(null)}
-            className="mt-2 text-xs text-[#4a4f66] light:text-[#7a86a8] hover:text-[#8b90a7] light:hover:text-[#3d4a6b] transition-colors">
+          <div className="flex gap-6 text-sm mb-3">
+            <span className="text-emerald-400 light:text-emerald-600">
+              {activeJob.channelResults.filter(r => r.status === "SUCCESS").length} Succeeded
+            </span>
+            <span className="text-red-400 light:text-red-500">
+              {activeJob.channelResults.filter(r => r.status === "FAILED").length} Failed
+            </span>
+            <span className="text-[#8b90a7] light:text-[#3d4a6b]">
+              {activeJob.totalVideosFound} found · +{activeJob.totalVideosAdded} new
+            </span>
+          </div>
+          {activeJob.channelResults.length > 0 && (
+            <div className="grid grid-cols-1 gap-1 max-h-40 overflow-y-auto">
+              {activeJob.channelResults.map((ch, i) => (
+                <div key={i} className="flex items-center justify-between text-xs py-1 border-t border-white/[0.05] light:border-black/[0.05]">
+                  <span className="text-[#e8eaf2] light:text-[#0f1523]">{ch.channelName}</span>
+                  <span className={cn(
+                    ch.status === "SUCCESS" ? "text-emerald-400 light:text-emerald-600"
+                    : ch.status === "FAILED" ? "text-red-400 light:text-red-500"
+                    : "text-amber-400 light:text-amber-600"
+                  )}>
+                    {ch.status === "FAILED" ? ch.errorMessage : `+${ch.videosAdded} videos`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+          <button onClick={() => setActiveJob(null)}
+            className="mt-3 text-xs text-[#4a4f66] light:text-[#7a86a8] hover:text-[#8b90a7] transition-colors">
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {isFailed && activeJob && (
+        <div className="rounded-2xl p-5 mb-6 border border-red-800/30 light:border-red-200 bg-red-950/20 light:bg-red-50">
+          <div className="flex items-center gap-2 mb-2">
+            <XCircle size={18} className="text-red-400 light:text-red-500" />
+            <h2 className="text-sm font-bold text-[#e8eaf2] light:text-[#0f1523]">Sync Failed</h2>
+          </div>
+          <p className="text-sm text-red-400 light:text-red-500">{activeJob.errorMessage}</p>
+          <button onClick={() => setActiveJob(null)}
+            className="mt-3 text-xs text-[#4a4f66] light:text-[#7a86a8] hover:text-[#8b90a7] transition-colors">
             Dismiss
           </button>
         </div>
@@ -170,7 +308,7 @@ export default function AdminSyncPage() {
           <div className="px-4 py-8 text-center text-sm text-red-400">{error}</div>
         ) : logs.length === 0 ? (
           <div className="px-4 py-8 text-center text-sm text-[#8b90a7] light:text-[#3d4a6b]">
-            No sync logs yet. Trigger a sync to get started.
+            No sync logs yet. Start a sync to get started.
           </div>
         ) : (
           logs.map((row, i) => {
@@ -260,7 +398,7 @@ export default function AdminSyncPage() {
             </select>
           </div>
           <p className="text-xs text-[#4a4f66] light:text-[#7a86a8]">
-            Backend auto-sync runs every {syncFreq} hours. Use &quot;Trigger Full Sync&quot; for immediate sync.
+            Backend auto-sync runs every {syncFreq} hours. Use &quot;Start Full Sync&quot; for immediate sync.
           </p>
           <button className="px-5 py-2 rounded-full text-sm font-semibold w-fit transition-all bg-brand-500 text-white hover:bg-brand-600">
             Save Settings

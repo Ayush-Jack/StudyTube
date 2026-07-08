@@ -1,10 +1,54 @@
 // ─────────────────────────────────────────────────────────────────
-// Sync service — admin sync operations
+// Sync service — admin sync operations (async + legacy)
 // ─────────────────────────────────────────────────────────────────
 import api from "@/lib/api";
-import type { ApiResponse, PageResponse, SyncLog, SyncResultResponse } from "@/types";
+import type {
+  ApiResponse,
+  PageResponse,
+  SyncLog,
+  SyncResultResponse,
+  SyncJobResponse,
+} from "@/types";
 
-/** Trigger sync for ALL approved channels (can take 10-20s) */
+// ════════════════════════════════════════════════════════════════
+//  ASYNC SYNC (recommended — non-blocking)
+// ════════════════════════════════════════════════════════════════
+
+/** Start a background sync job. Returns jobId immediately. */
+export async function startSync(): Promise<string> {
+  const res = await api.post<ApiResponse<{ jobId: string }>>(
+    "/admin/sync/start"
+  );
+  return res.data.data.jobId;
+}
+
+/** Poll the progress of a sync job. */
+export async function getSyncJobStatus(
+  jobId: string
+): Promise<SyncJobResponse> {
+  const res = await api.get<ApiResponse<SyncJobResponse>>(
+    `/admin/sync/status/${jobId}`
+  );
+  return res.data.data;
+}
+
+/** Get paginated history of all sync jobs. */
+export async function getSyncJobHistory(
+  page = 0,
+  size = 10
+): Promise<PageResponse<SyncJobResponse>> {
+  const res = await api.get<ApiResponse<PageResponse<SyncJobResponse>>>(
+    "/admin/sync/jobs",
+    { params: { page, size } }
+  );
+  return res.data.data;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  LEGACY SYNC (blocking — preserved for backward compatibility)
+// ════════════════════════════════════════════════════════════════
+
+/** Trigger sync for ALL approved channels (blocking — can take minutes) */
 export async function triggerFullSync(): Promise<SyncResultResponse[]> {
   const res = await api.post<ApiResponse<SyncResultResponse[]>>(
     "/admin/sync/trigger",
@@ -26,7 +70,7 @@ export async function triggerChannelSync(
   return res.data.data;
 }
 
-/** Fetch paginated sync logs */
+/** Fetch paginated sync logs (per-channel history) */
 export async function getSyncLogs(
   page = 0,
   size = 20
